@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Steganography</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container py-5">
+    <h2 class="text-center mb-4">🕵️‍♂️ Steganography Tool</h2>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="modeTabs">
+      <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#basic">Basic Mode</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#advanced">Advanced Mode</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- Basic Mode -->
+      <div class="tab-pane fade show active" id="basic">
+        <form action="{{ url_for('encode') }}" method="post" enctype="multipart/form-data" class="mb-5">
+          <h4>🔐 Encode (Single Image)</h4>
+          <div class="mb-3">
+            <label class="form-label">Image:</label>
+            <input type="file" name="image" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Text (Optional):</label>
+            <textarea name="text_data" rows="3" class="form-control"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">File (Optional):</label>
+            <input type="file" name="file_data" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password:</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Custom Encoded Image Name:</label>
+            <input type="text" name="custom_filename" class="form-control">
+          </div>
+          <button type="submit" class="btn btn-primary">Encode</button>
+        </form>
+
+        {% if original_image and encoded_image %}
+        <div class="row mb-4">
+          <div class="col-md-6 text-center">
+            <h5>Original Image</h5>
+            <img src="{{ url_for('static', filename='uploads/' + original_image) }}" class="img-fluid border" alt="Original Image">
+          </div>
+          <div class="col-md-6 text-center">
+            <h5>Encoded Image</h5>
+            <img src="{{ url_for('static', filename='uploads/' + encoded_image) }}" class="img-fluid border" alt="Encoded Image">
+            <div class="mt-2">
+              <a href="{{ url_for('static', filename='uploads/' + encoded_image) }}" download class="btn btn-success">Download Encoded Image</a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('decode') }}" method="post" enctype="multipart/form-data">
+          <h4> Decode (Single Image)</h4>
+          <div class="mb-3">
+            <label class="form-label">Encoded Image:</label>
+            <input type="file" name="encoded_image" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password:</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-danger">Decode</button>
+        </form>
+      </div>
+
+      <!-- Advanced Mode -->
+      <div class="tab-pane fade" id="advanced">
+        <form action="{{ url_for('advanced_encode') }}" method="post" enctype="multipart/form-data" class="mb-5">
+          <h4>🚀 Advanced Encode (Multi-Image)</h4>
+          <div class="mb-3">
+            <label class="form-label">Images:</label>
+            <input type="file" name="images" multiple class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Text (Optional):</label>
+            <textarea name="text_data" rows="3" class="form-control">{{ advanced_text or '' }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">File (Optional):</label>
+            <input type="file" name="file_data" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password:</label>
+            <input type="password" name="password" class="form-control" required value="{{ advanced_password or '' }}">
+          </div>
+          <button type="submit" name="action" value="check" class="btn btn-info">Check Capacity</button>
+          <button type="submit" name="action" value="encode" class="btn btn-primary">Advanced Encode</button>
+        </form>
+
+        <form action="{{ url_for('advanced_decode') }}" method="post" enctype="multipart/form-data">
+          <h4> Advanced Decode (Multi-Image)</h4>
+          <div class="mb-3">
+            <label class="form-label">Stego Images:</label>
+            <input type="file" name="stego_images" multiple class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password:</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-danger">Advanced Decode</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Output Messages -->
+    {% if decoded_text %}
+    <div class="alert alert-success mt-4"><strong>Decoded Text:</strong><br><pre>{{ decoded_text }}</pre></div>
+    {% endif %}
+
+    {% if decoded_file %}
+    <div class="alert alert-success mt-4">
+      <strong>Decoded File:</strong><br>
+      <a href="{{ url_for('static', filename='uploads/' + decoded_file) }}" download>{{ decoded_file }}</a>
+    </div>
+    {% endif %}
+
+    {% if capacity_result %}
+    <div class="alert alert-info mt-4"><strong>Capacity Check:</strong><br><pre>{{ capacity_result }}</pre></div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert-danger mt-4"><strong>Error:</strong> {{ error }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
